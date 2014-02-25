@@ -1,4 +1,5 @@
 Marionette.StateRegion = (function (Marionette, Backbone, _) {
+    'use strict';
 
     function ensure(obj, message) {
         if (!obj) {
