@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+<div id="content"></div>
+<script id="template1" type="text/x-tmpl-underscore">
+    <div>View 1 (<%= name %>)</div>
+    <button data-action="to2">Transition to view 2</button>
+    <button data-action="to3">Transition to view 3</button>
+    <button data-action="render">Render</button>
+    <button data-action="delete">Delete</button>
+</script>
+<script id="template2" type="text/x-tmpl-underscore">
+    <div>View 2 (<%= name %>)</div>
+    <button data-action="to1">Transition to view 1</button>
+    <button data-action="to3">Transition to view 3</button>
+    <button data-action="render">Render</button>
+    <button data-action="delete">Delete</button>
+</script>
+<script id="template3" type="text/x-tmpl-underscore">
+    <div>View 3 (<%= name %>)</div>
+    <button data-action="to1">Transition to view 1</button>
+    <button data-action="to2">Transition to view 2</button>
+    <button data-action="render">Render</button>
+    <button data-action="delete">Delete</button>
+</script>
+<script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
+<script type="text/javascript" src="../bower_components/underscore/underscore.js"></script>
+<script type="text/javascript" src="../bower_components/backbone/backbone.js"></script>
+<script type="text/javascript" src="../bower_components/backbone.marionette/lib/backbone.marionette.js"></script>
+<script type="text/javascript" src="../src/marionette.stateregion.js"></script>
+<script type="">
+
+    var vent = new Backbone.Wreqr.EventAggregator();
+    vent.on('log', function(message) {
+        console.log(message);
+    });
+
+    var View = Marionette.ItemView.extend({
+        className: 'item-view',
+
+        events: {
+            'click [data-action="delete"]': '_delete',
+            'click [data-action="render"]': 'render'
+        },
+
+        onClose: function() {
+            this._log('closing');
+        },
+
+        onDomRefresh: function() {
+            this._log('refreshing');
+        },
+
+        onRender: function() {
+            this._log('rendering');
+        },
+
+        onShow: function() {
+            this._log('showing');
+        },
+
+        _delete: function() {
+            this.model.collection.remove(this.model);
+        },
+
+        _log: function(action) {
+            var name = this.model.get('name');
+            vent.trigger('log', action + ' view ' + this.name + ' for model ' + name);
+        }
+    });
+
+    var View1 = View.extend({
+        template: '#template1',
+
+        name: '1',
+
+        triggers: {
+            'click [data-action="to2"]': 'view:2',
+            'click [data-action="to3"]': 'view:3'
+        }
+    });
+
+    var View2 = View.extend({
+        template: '#template2',
+
+        name: '2',
+
+        triggers: {
+            'click [data-action="to1"]': 'view:1',
+            'click [data-action="to3"]': 'view:3'
+        }
+    });
+
+    var View3 = View.extend({
+        template: '#template3',
+
+        name: '3',
+
+        triggers: {
+            'click [data-action="to1"]': 'view:1',
+            'click [data-action="to2"]': 'view:2'
+        }
+    });
+
+    var StateRegion = Marionette.StateRegion.extend({
+        initialView: 'view:1',
+
+        views: {
+            'view:1': View1,
+            'view:2': View2,
+            'view:3': View3
+        },
+
+        onClose: function() {
+            this._log('closing');
+        },
+
+        onShow: function() {
+            this._log('showing');
+        },
+
+        _log: function(action) {
+            vent.trigger('log', action + ' view in state region');
+        }
+    });
+
+    var app = new Marionette.Application();
+    app.addRegions({
+        content: {
+            selector: '#content',
+            regionType: StateRegion
+        }
+    });
+
+    app.on('start', function() {
+        var model = new Backbone.Model({ name: 'A' });
+        this.content.display({ model: model });
+    });
+
+    app.start();
+
+
+</script>
+</body>
+</html>
